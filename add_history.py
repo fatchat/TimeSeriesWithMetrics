@@ -12,10 +12,11 @@ with open(args.input, "r") as inputfile:
     headerline = inputfile.readline().strip()
     headers = headerline.split(' ')
     has_time = (headers[0] == "time")
+    if has_time: headers = headers[1:]
+    print (" ".join(headers))
     # hold (history * # non-time headers) values. insert at end, remove from front
     buffer = []
     packet_size = len(headers)
-    if has_time: packet_size -= 1
     buffer_size = args.history * packet_size
     # read time vector series 
     for line in inputfile.readlines():
