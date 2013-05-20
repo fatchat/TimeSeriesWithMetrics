@@ -5,6 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser("Compute time series derived metrics")
 parser.add_argument("--input", required=True, help="input file containing time,value pairs")
+parser.add_argument("--delim", default=',', help="delimiter between time and value in input file")
 parser.add_argument("--alpha", help="moving average alpha", type=float, default=0.3)
 parser.add_argument("--show-time", help="display time in output", action="store_true")
 parser.add_argument("--show-value", help="display value in output", action="store_true")
@@ -35,11 +36,12 @@ start_time = 0
 # open file, load input and compute associated metrics
 with open(args.input, "r") as inputfile:
     for line in inputfile.readlines():
-        [t_str, v_str] = [x.strip() for x in line.split(',')]
+        [t_str, v_str] = [x.strip() for x in line.split(args.delim)]
         time = int(t_str)
         value = float(v_str)
         v.append(value)
         n += 1 # highest index for t/v series
+        output_str = ""
         if n == 0:
             start_time = time
             t.append(0)
@@ -55,10 +57,10 @@ with open(args.input, "r") as inputfile:
             d.append(v[n] - v[n-1])
             s.append(s[n-1] + h[n])
             output_str = ""
-            if (args.show_time): output_str += ("%5d " % t[n])
-            if (args.show_value): output_str += ("%+02.4f " % v[n])
-            if (args.show_mvavg): output_str += ("%+02.4f " % m[n])
-            if (args.show_dev): output_str += ("%+02.4f " % h[n])
-            if (args.show_adjdiff): output_str += ("%+02.4f " % d[n])
-            if (args.show_runningsum): output_str += ("%+02.4f " % s[n])
-            if (output_str != ""): print (output_str)
+        if (args.show_time): output_str += ("%5d " % t[n])
+        if (args.show_value): output_str += ("%+02.4f " % v[n])
+        if (args.show_mvavg): output_str += ("%+02.4f " % m[n])
+        if (args.show_dev): output_str += ("%+02.4f " % h[n])
+        if (args.show_adjdiff): output_str += ("%+02.4f " % d[n])
+        if (args.show_runningsum): output_str += ("%+02.4f " % s[n])
+        if (output_str != ""): print (output_str)
