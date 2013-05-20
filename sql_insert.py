@@ -7,9 +7,9 @@ if "C:\\Scripts" not in sys.path:
     sys.path.append("C:\\scripts")
 import tablegenerator
 # globals
-dbname = "NeuralNetInput"
+dbname = "WithMetrics"
 # command-line args
-parser = argparse.ArgumentParser("Insert time series vectors into SQL table")
+parser = argparse.ArgumentParser("Insert time series vectors into a SQL table in the %s DB" % dbname)
 parser.add_argument("--input", required=True, help="input file")
 parser.add_argument("-t", "--tablename", required=True)
 parser.add_argument("-v", "--verbose", action="store_true")
