@@ -7,8 +7,15 @@ import logging
 parser = argparse.ArgumentParser("Train a neural network and evaluate its predictive ability on a split of CPU.smooth.r")
 parser.add_argument("--ratio", type=float, default=0.5, help="split ratio")
 parser.add_argument("--alpha", type=float, default=0.5, help="weight for mv avg")
+#parser.add_argument("--show-time", help="display time in output", action="store_true")
+parser.add_argument("--show-value", help="display value in output", action="store_true")
+parser.add_argument("--show-mvavg", help="display mv. avg. in output", action="store_true")
+parser.add_argument("--show-dev", help="display dev. from mv. avg. in output", action="store_true")
+parser.add_argument("--show-adjdiff", help="display adj. diffs in output", action="store_true")
+parser.add_argument("--show-runningsum", help="display running sum in output", action="store_true")
 parser.add_argument("--output-dir", required=True)
 parser.add_argument("--history", type=int, required=True)
+parser.add_argument("--predictions", type=int, required=True)
 args = parser.parse_args()
 
 # fixed input file for now
@@ -21,7 +28,7 @@ output_dir = "%s\\%d" % (args.output_dir, index)
 os.makedirs(output_dir)
 
 logging.basicConfig(filename="%s\\train-and-validate.log" % output_dir,level=logging.INFO)
-logging.info("start: output-dir=%s history=%d split ratio=%f alpha=%f" % (args.output_dir, args.history, args.ratio, args.alpha))
+logging.info("start: output-dir=%s history=%d predictions=%d split ratio=%f alpha=%f" % (args.output_dir, args.history, args.predictions, args.ratio, args.alpha))
 
 # Step 1. Split into training and validation sets
 trainingfile = "%s\\TrainingData.txt" % output_dir
@@ -31,22 +38,28 @@ logging.info(cmd)
 os.system(cmd)
 
 # Step 2. Compute associated metrics on both sets
+cmd_stem = "python C:\\TimeSeriesWithMetrics\\compute_metrics.py --alpha %f " % args.alpha
+if args.show_value: cmd_stem += "--show-value "
+if args.show_mvavg: cmd_stem += "--show-mvavg "
+if args.show_dev: cmd_stem += "--show-dev "
+if args.show_adjdiff: cmd_stem += "--show-adjdiff "
+if args.show_runningsum: cmd_stem += "--show-runningsum "
 training_metrics = "%s\\TrainingData.Metrics.txt" % output_dir
 validation_metrics = "%s\\ValidationData.Metrics.txt" % output_dir
-cmd = "python C:\\TimeSeriesWithMetrics\\compute_metrics.py --input %s --alpha %f --show-value --show-mvavg --show-dev --show-adjdiff --show-runningsum > %s" % (trainingfile, args.alpha, training_metrics)
+cmd = "%s --input %s > %s" % (cmd_stem, trainingfile, training_metrics)
 logging.info(cmd)
 os.system(cmd)
-cmd = "python C:\\TimeSeriesWithMetrics\\compute_metrics.py --input %s --alpha %f --show-value --show-mvavg --show-dev --show-adjdiff --show-runningsum > %s" % (validationfile, args.alpha, validation_metrics)
+cmd = "%s --input %s > %s" % (cmd_stem, validationfile, validation_metrics)
 logging.info(cmd)
 os.system(cmd)
 
 # Step 3. Transform into historical vectors
 training_historical = "%s\\TrainingData.History.txt" % output_dir
 validation_historical = "%s\\ValidationData.History.txt" % output_dir
-cmd = "python C:\\TimeSeriesWithMetrics\\add_history.py --input %s --history %d > %s" % (training_metrics, args.history, training_historical)
+cmd = "python C:\\TimeSeriesWithMetrics\\add_history.py --input %s --history %d > %s" % (training_metrics, args.history + args.predictions, training_historical)
 logging.info(cmd)
 os.system(cmd)
-cmd = "python C:\\TimeSeriesWithMetrics\\add_history.py --input %s --history %d > %s" % (validation_metrics, args.history, validation_historical)
+cmd = "python C:\\TimeSeriesWithMetrics\\add_history.py --input %s --history %d > %s" % (validation_metrics, args.history + args.predictions, validation_historical)
 logging.info(cmd)
 os.system(cmd)
 
@@ -66,7 +79,7 @@ model_name = sys.stdin.readline().strip()
 
 # Step 6. Validate the trained model against the validation set
 predicted_values = "%s\\PredictedData.txt" % output_dir
-cmd = "C:\\Utils\\neural-network.exe --action MetricQuery --model-name %s --query-data %s --history %d --output-file %s" % (model_name, validation_historical, args.history - 1, predicted_values)
+cmd = "C:\\Utils\\neural-network.exe --action MetricQuery --model-name %s --query-data %s --predictions %d --output-file %s" % (model_name, validation_historical, args.predictions, predicted_values)
 logging.info(cmd)
 os.system(cmd)
 
