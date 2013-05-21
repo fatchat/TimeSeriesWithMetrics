@@ -4,7 +4,8 @@ import sys
 import argparse
 import os
 import logging
-parser = argparse.ArgumentParser("Train a neural network and evaluate its predictive ability on a split of CPU.smooth.r")
+parser = argparse.ArgumentParser("Train a neural network and evaluate its predictive ability on a time-series")
+parser.add_argument("--input", default="F:\\TextData\\CPU.smooth.r.txt")
 parser.add_argument("--ratio", type=float, default=0.5, help="split ratio")
 parser.add_argument("--alpha", type=float, default=0.5, help="weight for mv avg")
 #parser.add_argument("--show-time", help="display time in output", action="store_true")
@@ -18,8 +19,7 @@ parser.add_argument("--history", type=int, required=True)
 parser.add_argument("--predictions", type=int, required=True)
 args = parser.parse_args()
 
-# fixed input file for now
-inputfile = "F:\\TextData\\CPU.smooth.r.txt"
+inputfile = args.input
 
 # output dir is a subdirectory of args.output_dir
 files = os.listdir(args.output_dir)
