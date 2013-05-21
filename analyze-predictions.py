@@ -4,33 +4,34 @@ import sys
 import argparse
 from math import sqrt
 
-def stats (metric, inputfilename, show_vals):
+def show_stats (metric, inputfilename, show_vals):
     mse = 0
+    total = 0
     count = 0
     with open(inputfilename, "r") as inputfile:
+        headers = inputfile.readline().strip().split()
+        metric_idx = headers.index(metric)
         for line in inputfile.readlines():
-            if line.startswith (metric):
-                c = line.strip().split()
-                pred_val = float(c[1])
-                actual_val = float(c[2])
-                error_val = actual_val - pred_val
-                mse += (error_val * error_val)
-                count += 1
-                if show_vals:
-                    error_pctg = error_val / actual_val * 100
-                    print ("%10s\t%02.5f\t%02.5f\t%+02.5f\t%+03.2f" % (metric, actual_val, pred_val, error_val, error_pctg))
+            c = line.strip().split()
+            actual_val = float(c[0])
+            pred_val = float(c[metric_idx])
+            error_val = actual_val - pred_val
+            mse += (error_val * error_val)
+            count += 1
+            total += actual_val
+            if show_vals:
+                error_pctg = error_val / actual_val * 100
+                print ("%10s\t%02.5f\t%02.5f\t%+02.5f\t%+03.2f" % (metric, actual_val, pred_val, error_val, error_pctg))
               
         mse /= count
+        total /= count
         rmse = sqrt (mse)
-        print ("RMSE for %s is %f" % (metric, rmse))
+        print ("RMSE for %10s is %3.5f on %5.5f (%05.5f %%)" % (metric, rmse, total, rmse/total*100))
 
 def get_metrics (inputfilename):
     with open(inputfilename, "r") as inputfile:
-        names = dict()
-        for line in inputfile.readlines():
-            c = line.strip().split()[0]
-            names[c] = 1
-        return names.keys()
+        header = inputfile.readline().strip()
+        return header.split()
 
 parser = argparse.ArgumentParser("Prediction analysis")
 parser.add_argument("--input", required=True)
@@ -42,9 +43,9 @@ if args.metric == "list-all":
     print (", ".join(get_metrics(args.input)))
 elif args.metric == "all":
     for metric in get_metrics(args.input):
-        stats (metric, args.input, args.show_vals)
+        show_stats (metric, args.input, args.show_vals)
 else:
-    stats (args.metric, args.input, args.show_vals)
+    show_stats (args.metric, args.input, args.show_vals)
         
 
 #
