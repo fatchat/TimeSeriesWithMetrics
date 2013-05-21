@@ -38,7 +38,7 @@ except pypyodbc.DatabaseError:
 column_spec = []
 for i in range(0, history):
     for header in headers:
-        column_spec.append({'name':"%s_%d" % (header, i)          , 'type':'float'})
+        column_spec.append({'name':"%s_%d" % (header, i), 'type':'float'})
 tg.create(args.tablename, column_spec)
 
 # insert data 
