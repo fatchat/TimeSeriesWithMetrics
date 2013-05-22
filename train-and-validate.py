@@ -9,7 +9,7 @@ parser.add_argument("--input", default="F:\\TextData\\CPU.smooth.r.txt")
 parser.add_argument("--ratio", type=float, default=0.5, help="split ratio")
 parser.add_argument("--alpha", type=float, default=0.5, help="weight for mv avg")
 #parser.add_argument("--show-time", help="display time in output", action="store_true")
-parser.add_argument("--use-value", help="use the value metric", action="store_true")
+#parser.add_argument("--use-value", help="use the value metric", action="store_true", default=True)
 parser.add_argument("--use-mvavg", help="use the mv. avg. metric", action="store_true")
 parser.add_argument("--use-dev", help="use the dev. from mv. avg. metric", action="store_true")
 parser.add_argument("--use-adjdiff", help="use the adj. diffs metric", action="store_true")
@@ -26,6 +26,12 @@ files = os.listdir(args.output_dir)
 index = 1 + len(files)
 output_dir = "%s\\%d" % (args.output_dir, index)
 os.makedirs(output_dir)
+
+# resolve dependencies between metrics
+args.use_value = True
+if args.use_dev: args.use_mvavg = True
+if args.use_adjdiff: args.use_value = True
+if args.use_runningsum: args.use_mvavg = True
 
 logging.basicConfig(filename="%s\\LOG-train-and-validate.log" % output_dir,level=logging.INFO)
 logging.info("start: output-dir=%s history=%d predictions=%d split ratio=%f alpha=%f" % (args.output_dir, args.history, args.predictions, args.ratio, args.alpha))
@@ -69,7 +75,8 @@ logging.info(cmd)
 os.system(cmd)
 
 # Step 4. Insert the training set into a SQL table
-training_tablename = "[Training.%d]" % index
+uniq_name = output_dir.replace(" ", "").replace("\\", "").replace(":","")
+training_tablename = "[%s.%d]" % (uniq_name, index)
 cmd = "python C:\\TimeSeriesWithMetrics\\sql_insert.py --input %s -t %s" % (training_historical, training_tablename)
 print ("inserting training set into SQL table %s" % training_tablename)
 logging.info(cmd)
@@ -81,7 +88,7 @@ os.system(cmd)
 #while continue_str != "continue": continue_str = sys.stdin.readline().strip()
 
 data_source = "With Metrics"
-model_name = "Training%d" % index
+model_name = "%s%d" % (uniq_name, index)
 
 # Step 6. Create and train the mining model
 cmd = "C:\\Utils\\neural-network.exe --action MetricTrain --model-name %s --data-source \"%s\" --sql-table-name \"%s\" --query-data %s --predictions %d" % (model_name, data_source, training_tablename, validation_historical, args.predictions)
