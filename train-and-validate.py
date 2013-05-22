@@ -76,9 +76,9 @@ logging.info(cmd)
 os.system(cmd)
     
 # Step 5. Manually create the DSV from withing SSAS
-print ("==> Create the data source view for the table %s, then type \"continue\"" % training_tablename)
-continue_str = ""
-while continue_str != "continue": continue_str = sys.stdin.readline().strip()
+#print ("==> Create the data source view for the table %s, then type \"continue\"" % training_tablename)
+#continue_str = ""
+#while continue_str != "continue": continue_str = sys.stdin.readline().strip()
 
 data_source = "With Metrics"
 model_name = "Training%d" % index
@@ -92,10 +92,12 @@ os.system(cmd)
 # Step 7. Validate the trained model against the validation set
 predicted_values = "%s\\PredictedData.txt" % output_dir
 cmd = "C:\\Utils\\neural-network.exe --action MetricQuery --model-name %s --query-data %s --predictions %d --output-file %s" % (model_name, validation_historical, args.predictions, predicted_values)
+print ("predicting values using validation set %s" % validation_historical)
 logging.info(cmd)
 os.system(cmd)
 
 # Step 8. Compute statistics on the predictions vs. actual values
 cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --metric all" % predicted_values
+print ("computing accuracy statistics using predicted values %s" % predicted_values)
 logging.info(cmd)
 os.system(cmd)
