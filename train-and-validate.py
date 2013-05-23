@@ -5,7 +5,7 @@ import argparse
 import os
 import logging
 parser = argparse.ArgumentParser("Train a neural network and evaluate its predictive ability on a time-series")
-parser.add_argument("--input", default="F:\\TextData\\CPU.smooth.r.txt")
+parser.add_argument("--input", required=True)
 parser.add_argument("--ratio", type=float, default=0.5, help="split ratio")
 parser.add_argument("--alpha", type=float, default=0.5, help="weight for mv avg")
 #parser.add_argument("--show-time", help="display time in output", action="store_true")
@@ -34,7 +34,8 @@ if args.use_adjdiff: args.use_value = True
 if args.use_runningsum: args.use_mvavg = True
 
 logging.basicConfig(filename="%s\\LOG-train-and-validate.log" % output_dir,level=logging.INFO)
-logging.info("start: output-dir=%s history=%d predictions=%d split ratio=%f alpha=%f" % (args.output_dir, args.history, args.predictions, args.ratio, args.alpha))
+logging.info("start: output-dir=%s history=%d predictions=%d split-ratio=%f alpha=%f" % (output_dir, args.history, args.predictions, args.ratio, args.alpha))
+logging.info("metrics: use-value=%s use-mvavg=%s use-dev=%s use-adjdiff=%s use-runningsum=%s" % (args.use_value, args.use_mvavg, args.use_dev, args.use_adjdiff, args.use_runningsum))
 
 # Step 1. Split into training and validation sets
 trainingfile = "%s\\TrainingData.txt" % output_dir
@@ -104,7 +105,9 @@ logging.info(cmd)
 os.system(cmd)
 
 # Step 8. Compute statistics on the predictions vs. actual values
-cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --metric all" % predicted_values
+summary_file = "%s\\Summary.txt" % output_dir
 print ("computing accuracy statistics using predicted values %s" % predicted_values)
-logging.info(cmd)
-os.system(cmd)
+for pred_step in range(0, args.predictions):
+    cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --summary-file %s --pred-step %d" % (predicted_values, summary_file, 1 + pred_step)
+    logging.info(cmd)
+    os.system(cmd)
