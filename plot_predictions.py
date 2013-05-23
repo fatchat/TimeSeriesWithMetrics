@@ -33,7 +33,7 @@ plotcmd += "set title \"%s\";" % backslashedinput
 plots = []
 conjunction = get_row_spec_condition(args.start, args.end)
 for header in headers:
-    if args.metric != None and args.metric != header:
+    if args.metric not in [None, "", "all"] and args.metric != header:
         continue
     if conjunction != "":
         row_spec = "(%s ? $%d : 0/0)" % (conjunction, 1 + headers.index(header))
