@@ -4,7 +4,16 @@ import sys
 import argparse
 from math import sqrt
 
-def show_stats (metrics, metric, inputfilename, show_vals, pred_step, top_n):
+parser = argparse.ArgumentParser("Prediction analysis")
+parser.add_argument("--input", required=True)
+parser.add_argument("--summary-file", help="output summary to text file")
+parser.add_argument("--metric", default="all", help="name of metric, or list-all, or all")
+parser.add_argument("--pred-step", default=1, type=int, help="number of steps ahead to predict (that step only)")
+parser.add_argument("--show-vals", action="store_true")
+parser.add_argument("--top-n", type=int, metavar="N", default=0, help="process only the top N rows")
+args = parser.parse_args()
+
+def show_stats (metrics, metric, inputfilename, show_vals, pred_step, top_n, summary_file):
     mse = 0
     total = 0
     count = 0
@@ -42,25 +51,21 @@ def show_stats (metrics, metric, inputfilename, show_vals, pred_step, top_n):
         if show_vals:
             print ("=" * 80)
         print ("RMSE for %10s, %d steps ahead, is %3.5f on a mean of %5.5f" % (metric, pred_step + 1, rmse, total))
+        if summary_file not in [None, ""]:
+            with open(summary_file, "a") as outputfile:
+                outputfile.write("%s %d %f %f\n" % (metric, pred_step + 1, rmse, total))
 
 def get_metrics (inputfilename):
     with open(inputfilename, "r") as inputfile:
         header = inputfile.readline().strip()
         return header.split()[1:] # discard "actual" (which is always there)
 
-parser = argparse.ArgumentParser("Prediction analysis")
-parser.add_argument("--input", required=True)
-parser.add_argument("--metric", required=True, help="name of metric, or list-all, or all")
-parser.add_argument("--pred-step", default=1, type=int, help="number of steps ahead to predict (that step only)")
-parser.add_argument("--show-vals", action="store_true")
-parser.add_argument("--top-n", type=int, metavar="N", default=0, help="process only the top N rows")
-args = parser.parse_args()
-
+# ########### start #############
 metrics = get_metrics(args.input)
 if args.metric == "list-all":
     print (", ".join(metrics))
 elif args.metric == "all":
     for metric in metrics:
-        show_stats (metrics, metric, args.input, args.show_vals, args.pred_step - 1, args.top_n)
+        show_stats (metrics, metric, args.input, args.show_vals, args.pred_step - 1, args.top_n, args.summary_file)
 else:
-    show_stats (metrics, args.metric, args.input, args.show_vals, args.pred_step - 1, args.top_n)
+    show_stats (metrics, args.metric, args.input, args.show_vals, args.pred_step - 1, args.top_n,args.summary_file)
