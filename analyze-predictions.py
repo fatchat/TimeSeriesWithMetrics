@@ -13,26 +13,48 @@ parser.add_argument("--show-vals", action="store_true")
 parser.add_argument("--top-n", type=int, metavar="N", default=0, help="process only the top N rows")
 args = parser.parse_args()
 
+def get_metrics (inputfilename):
+    with open(inputfilename, "r") as inputfile:
+        headers = inputfile.readline().strip().split()
+        if headers[0] == "version":
+            headers = inputfile.readline().strip().split()
+        return headers[1:] # discard "actual" (which is always there)
+
+def get_npred (versnum, c, metrics):
+    if versnum == 0:
+        #print ("len(c)=%d len(metrics)=%d npred=%d" % (len(c), len(metrics), npred))
+        return int(len(c) / (len(metrics) + 1))
+    else:
+        print ("cannot handle version %d, quitting." % versnum)
+        sys.exit(1)
+
+def get_actual_and_predicted(versnum, c, pred_step, npred, metric_idx, metrics):
+    actual_val = float(c[pred_step])
+    pred_val = float(c[npred + metric_idx + len(metrics) * pred_step])
+    return [actual_val, pred_val]
+        
 def show_stats (metrics, metric, inputfilename, show_vals, pred_step, top_n, summary_file):
     mse = 0
     total = 0
     count = 0
+    versnum = 0
     with open(inputfilename, "r") as inputfile:
         metric_idx = metrics.index(metric)
-        inputfile.readline() # discard header
+        header = inputfile.readline() # discard header
+        if header.strip().split()[0] == "version":
+            versnum = int(header.strip().split()[1])
+            inputfile.readline() # discard next line (metrics)
         npred = 0
         if show_vals:
             print("%10s\t%8s\t%8s\t%8s\t%8s" % ("metric", "actual", "pred", "error", "error%"))
-            print ("=" * 80)
+            print("=" * 80)
         for line in inputfile.readlines():
             c = line.strip().split()
             if npred==0:
-                npred = int(len(c) / (len(metrics) + 1))
-                #print ("len(c)=%d len(metrics)=%d npred=%d" % (len(c), len(metrics), npred))
+                npred = get_npred(versnum, c, metrics)
                 if pred_step >= npred:
                     raise IndexError("pred_step must be <= %d" % npred)
-            actual_val = float(c[pred_step])
-            pred_val = float(c[npred + metric_idx + len(metrics) * pred_step])
+            [actual_val, pred_val] = get_actual_and_predicted(versnum, c, pred_step, npred, metric_idx, metrics)
             error_val = actual_val - pred_val
             mse += (error_val * error_val)
             count += 1
@@ -54,11 +76,6 @@ def show_stats (metrics, metric, inputfilename, show_vals, pred_step, top_n, sum
         if summary_file not in [None, ""]:
             with open(summary_file, "a") as outputfile:
                 outputfile.write("%s %d %f %f\n" % (metric, pred_step + 1, rmse, total))
-
-def get_metrics (inputfilename):
-    with open(inputfilename, "r") as inputfile:
-        header = inputfile.readline().strip()
-        return header.split()[1:] # discard "actual" (which is always there)
 
 # ########### start #############
 metrics = get_metrics(args.input)
