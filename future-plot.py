@@ -18,6 +18,14 @@ line = ""
 
 with open(args.input, "r") as inputfile:
     headers = inputfile.readline().strip().split()
+    if headers[0] == "version":
+        versnum = int(headers[1])
+        if versnum > 0:
+            print ("this script needs to be updated for versions > 0")
+            sys.exit(1)
+        headers = inputfile.readline().strip().split()
+    else:
+        versnum = 0
     line = inputfile.readline().strip().split()
     metrics = headers[1:]
     npredicted = int(len(line) / len(headers))
