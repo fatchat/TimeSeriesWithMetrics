@@ -2,6 +2,7 @@
 # @author rohit
 import sys
 import argparse
+from math import sqrt
 
 parser = argparse.ArgumentParser("Compute time series derived metrics")
 parser.add_argument("--input", required=True, help="input file containing time,value pairs")
@@ -10,7 +11,7 @@ parser.add_argument("--alpha", help="moving average alpha", type=float, default=
 parser.add_argument("--show-time", help="display time in output", action="store_true")
 parser.add_argument("--show-value", help="display value in output", action="store_true")
 parser.add_argument("--show-mvavg", help="display mv. avg. in output", action="store_true")
-parser.add_argument("--show-dev", help="display dev. from mv. avg. in output", action="store_true")
+parser.add_argument("--show-dev", help="display mean/std.dev.-normalized value in output", action="store_true")
 parser.add_argument("--show-adjdiff", help="display adj. diffs in output", action="store_true")
 parser.add_argument("--show-runningsum", help="display running sum in output", action="store_true")
                     
@@ -36,6 +37,7 @@ start_time = 0
 # open file, load input and compute associated metrics
 with open(args.input, "r") as inputfile:
     for line in inputfile.readlines():
+        #print(line)
         [t_str, v_str] = [x.strip() for x in line.split(args.delim)]
         time = int(t_str)
         value = float(v_str)
