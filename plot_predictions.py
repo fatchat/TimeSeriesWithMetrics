@@ -17,8 +17,8 @@ def get_row_spec_condition (start, end):
     lb_spec = ""
     ub_spec = ""
     conjunction = ""
-    if args.start > 0: lb_spec = "$0 >= %d" % args.start
-    if args.end > 0: ub_spec = "$0 <= %d" % args.end
+    if start > 0: lb_spec = "$0 >= %d" % start
+    if end > 0: ub_spec = "$0 <= %d" % end
     if lb_spec != "" and ub_spec != "": conjunction = "%s && %s" % (lb_spec, ub_spec)
     if conjunction == "" and lb_spec != "": conjunction = lb_spec
     if conjunction == "" and ub_spec != "": conjunction = ub_spec
@@ -47,7 +47,7 @@ plotcmd += "set linestyle 1;"
 plots = []
 conjunction = get_row_spec_condition(args.start, args.end)
 
-def get_column_index (versnum, npred, metric_idx, n_metrics, pred_step):
+def get_column_index (versnum, pred_step, npred, metric_idx, n_metrics):
     if versnum == 0:
         if metric_idx == 0:             # "actual"
             return pred_step            # first actual is @ t_1 not t_0
@@ -55,6 +55,8 @@ def get_column_index (versnum, npred, metric_idx, n_metrics, pred_step):
             return (npred +             # skip "actual"s
                     metric_idx - 1 +    # metric_idx > 0 since this is not "actual"
                     (n_metrics - 1) * pred_step) # the jump is n-1 because there is no "actual"
+    elif versnum == 1:
+        return pred_step + npred * metric_idx
     else:
         print ("unsupported versnum %d" % versnum)
         sys.exit(1)
@@ -63,7 +65,7 @@ for metric in metrics:
     if args.metrics not in [None, "", "all"] and metric not in args.metrics.split():
         continue
     # col index + 1 because gnuplot columns start at 1 ($0 is the row number)
-    column_index = 1 + get_column_index(versnum, npredicted, metrics.index(metric), len(metrics), args.pred)
+    column_index = 1 + get_column_index(versnum, args.pred, npredicted, metrics.index(metric), len(metrics))
     if conjunction != "":
         row_spec = "(%s ? $%d : 0/0)" % (conjunction, column_index)
     else:
