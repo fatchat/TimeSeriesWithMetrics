@@ -9,8 +9,8 @@ parser.add_argument("--schedule-folder", required=True, help="name of folder hol
 parser.add_argument("--input-file-list", required=True, help="file containing list of input files")
 parser.add_argument("--history-start", type=int, required=True, help="start of history range")
 parser.add_argument("--history-end", type=int, required=True, help="end of history range")
-parser.add_argument("--npreds-start", type=int, required=True, help="start of npreds range")
-parser.add_argument("--npreds-end", type=int, required=True, help="end of npreds range")
+#parser.add_argument("--npreds-start", type=int, required=True, help="start of npreds range")
+#parser.add_argument("--npreds-end", type=int, required=True, help="end of npreds range")
 args=parser.parse_args()
 
 schedule_file = args.schedule_folder + "\\schedule.txt"
@@ -23,7 +23,8 @@ with open (schedule_file, "w") as schedulefile:
                 #inputfilename = inputfilename.replace("\\", "\\" + "\\")
                 if os.path.exists(inputfilename):
                     for hist in range (args.history_start, args.history_end):
-                        for pred in range(args.npreds_start, args.npreds_end):
+                        #for pred in range(args.npreds_start, args.npreds_end):
+                        for pred in range(int(hist/2), int(hist)):
                             cmd = "python C:\\TimeSeriesWithMetrics\\train-and-validate.py --input %s --use-mvavg --use-dev --use-adjdiff --use-runningsum --output-dir %s --history %d --predictions %d\n" % (inputfilename, args.schedule_folder, hist, pred)
                             schedulefile.write("%d %s" % (sched_num, cmd))
                             sched_num += 1
