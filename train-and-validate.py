@@ -107,7 +107,6 @@ os.system(cmd)
 # Step 8. Compute statistics on the predictions vs. actual values
 summary_file = "%s\\Summary.txt" % output_dir
 print ("computing accuracy statistics using predicted values %s" % predicted_values)
-for pred_step in range(0, args.predictions):
-    cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --summary-file %s --pred-step %d" % (predicted_values, summary_file, 1 + pred_step)
-    logging.info(cmd)
-    os.system(cmd)
+cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --summary-file %s --pred-step all" % (predicted_values, summary_file)
+logging.info(cmd)
+os.system(cmd)
