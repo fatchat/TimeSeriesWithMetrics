@@ -9,7 +9,10 @@ from collections import defaultdict
 parser = argparse.ArgumentParser("show model info")
 parser.add_argument("--input", help="input folder")
 parser.add_argument("--parent", help="parent folder")
-parser.add_argument("--multi-line-rmse", action="store_true", help="multi-line output for RMSE (single file input only)")
+parser.add_argument("--redo-summary", action="store_true")
+parser.add_argument("--history", type=int)
+parser.add_argument("--npreds", type=int)
+parser.add_argument("--multi-line-rmse", action="store_true", help="multi-line output for RMSE")
 args = parser.parse_args()
 
 def get_value(line, key):
@@ -22,8 +25,9 @@ def get_folder_info (folder):
     if not os.path.exists(logfile):
         logfile = folder + "\\train-and-validate.log"
     if not os.path.exists(logfile):
-        return ""
-    output_line = "log=%s " % logfile
+        return None
+    folder_info = dict()
+    folder_info['log'] = logfile
     with open(logfile, "r") as inputfile:
         start_line= inputfile.readline()
         metrics_line = inputfile.readline()
@@ -31,40 +35,52 @@ def get_folder_info (folder):
             split_line = inputfile.readline()
         else:
             split_line = metrics_line
-            metrics_line = ""
+            metrics_line = None
 
         npreds = int(get_value(start_line, "predictions="))
-        for key in ["history", "predictions"]: # "output-dir", 
-            output_line += "%s=%s " % (key, get_value(start_line, key+"="))
-        output_line += "input-file=%s " % get_value(split_line, "--input ")
-        if metrics_line != "":
-            output_line += metrics_line[metrics_line.find(" "):].strip() + " "
+        history = int(get_value(start_line, "history="))
+        if args.npreds != None and args.npreds != npreds: return None
+        if args.history != None and args.history != history: return None
+        folder_info['predictions'] = npreds
+        folder_info['history'] = history
+        folder_info['input-file'] = get_value(split_line, "--input ")
+        if metrics_line != None:
+            for metric_data in metrics_line[metrics_line.find(" "):].split():
+                (metric, true_false) = metric_data.split('=')
+                folder_info[metric] = true_false
 
+    rmse_info = defaultdict(dict)
     summary_file = folder + "\\Summary.txt"
+    predictions_file = folder + "\\PredictedData.txt"
+    if args.redo_summary and os.path.exists(summary_file):
+        os.unlink(summary_file)
+    if args.redo_summary or not os.path.exists(summary_file):
+        cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --summary-file %s --pred-step all" % (predictions_file, summary_file)
+        os.system(cmd)        
     if os.path.exists(summary_file):
         inputfile = open(summary_file, "r")
         mean = 0
+        stddev = 0
         for line in inputfile.readlines():
-            [metric, pred_step, rmse, total] = line.strip().split()
-            output_line += "RMSE-%s-%s=%s " % (metric, pred_step, rmse)
-            if mean == 0: mean = float(total)
-        output_line += "mean=%f " % mean
+            components = line.strip().split()
+            metric = components[0]
+            pred_step = components[1]
+            rmse = components[2]
+            o_mean = components[3]
+            if len(components) > 4:
+                o_stddev = components[4]
+            else:
+                o_stddev = 0
+            rmse_info[int(pred_step)][metric] = float(rmse)
+            if mean == 0: mean = float(o_mean)
+            if stddev == 0: stddev = float(o_stddev)
+        folder_info['mean'] = mean
+        if stddev > 0: folder_info['stddev'] = stddev
 
-    return output_line
+    return (folder_info, rmse_info)
 
-def print_multi_line_rmse(info):
-    parts = info.split(' ')
-    rmse_info = defaultdict(dict)
-    regex = re.compile("RMSE-([^-]+)-([^=]+)=([^ ]+)")
-    for part in parts:
-        if part.startswith("RMSE-"):
-            # RMSE-<metric>-<step>=<value>
-            groups = regex.match(part).groups()
-            metric = groups[0]
-            step = groups[1]
-            value = groups[2]
-            rmse_info[step][metric] = value
-    # create the header contiaining metric names
+def print_multi_line_rmse(rmse_info):
+    # create the header containing metric names
     arbit_step = list(rmse_info)[0]
     format_str = "%8s\t" * len(rmse_info[arbit_step].keys())
     print ("\t" + format_str % tuple(sorted(rmse_info[arbit_step].keys())))
@@ -76,20 +92,27 @@ def print_multi_line_rmse(info):
             line += "%+1.5f\t" % float(rmse_info[step][metric])
         print (line)
 
-
+def print_folder_info(folder_info):
+    for key in sorted(folder_info.keys()):
+        print ("%s=%s " % (str(key), str(folder_info[key])))
             
 # ###### start ######
 if args.input != None:
     info = get_folder_info (args.input)
-    if info != "":
+    if info != None:
         if args.multi_line_rmse:
-            print_multi_line_rmse(info)
+            print_multi_line_rmse(info[1])
         else:
-            print (info)
+            print_folder_info(info[0])
 elif args.parent != None:
     for folder in os.listdir(args.parent):
         info = get_folder_info(args.parent + "\\" + folder)
-        if info != "": print (info)
+        if info != None:
+            if args.multi_line_rmse:
+                print_multi_line_rmse(info[1])
+            else:
+                print_folder_info(info[0])
 else:
     print ("--input or --parent is required")
+    parser.print_help()
     
