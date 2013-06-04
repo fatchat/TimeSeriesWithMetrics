@@ -219,14 +219,14 @@ class MinMaxTracker:
 # ==========================================================================================================        
 class PredictionChecker:
     def __init__(self, inputfilename, metric_idx):
-        self.predfilereader = PredFileReader (inputfilename, metric_idx)
+        self.predfilereader = PredFileReader (inputfilename)
         self.metric_idx = metric_idx
         self.processors = []
         
     def process_input_line(self, values):
         for step in range (0, self.predfilereader.npred):
             actual      = self.predfilereader.get_actual (values, step)
-            predicted   = self.predfilereader.get_predicted (values, step)
+            predicted   = self.predfilereader.get_predicted (values, step, self.metric_idx)
             for processor in self.processors:
                 processor.update(actual, predicted)
             
