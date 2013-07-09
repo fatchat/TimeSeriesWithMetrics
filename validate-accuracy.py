@@ -126,7 +126,7 @@ class ForwardAlarmGenerator:
         tpr = self.confusion_matrix.sensitivity()
         fpr = self.confusion_matrix.FPR()
         if tpr != None and fpr != None:
-            print ("%f %f" % (fpr, tpr))
+            print ("%f %f %f" % (fpr, tpr, self.threshold))
             
 # ==========================================================================================================        
 class ImmediateAlarmGenerator:
