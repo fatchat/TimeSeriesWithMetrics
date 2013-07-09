@@ -1,4 +1,4 @@
-# @brief Split the CPU data, traing a neural network and evaluate the predictive ability
+# @brief Split the CPU data, train a neural network and evaluate the predictive ability
 # @author rohit
 import sys
 import argparse
@@ -78,12 +78,12 @@ os.system(cmd)
 # Step 4. Insert the training set into a SQL table
 uniq_name = output_dir.replace(" ", "").replace("\\", "").replace(":","")
 training_tablename = "[%s.%d]" % (uniq_name, index)
-cmd = "python C:\\TimeSeriesWithMetrics\\sql_insert.py --input %s -t %s" % (training_historical, training_tablename)
+cmd = "python C:\\TimeSeriesWithMetrics\\sql_insert.py --input %s -t %s --dbname %s" % (training_historical, training_tablename, "WithMetrics")
 print ("inserting training set into SQL table %s" % training_tablename)
 logging.info(cmd)
 os.system(cmd)
     
-# Step 5. Manually create the DSV from withing SSAS
+# Step 5. Manually create the DSV from within SSAS
 #print ("==> Create the data source view for the table %s, then type \"continue\"" % training_tablename)
 #continue_str = ""
 #while continue_str != "continue": continue_str = sys.stdin.readline().strip()
@@ -92,21 +92,21 @@ data_source = "With Metrics"
 model_name = "%s%d" % (uniq_name, index)
 
 # Step 6. Create and train the mining model
-cmd = "C:\\Utils\\neural-network.exe --action MetricTrain --model-name %s --data-source \"%s\" --sql-table-name \"%s\" --query-data %s --predictions %d" % (model_name, data_source, training_tablename, validation_historical, args.predictions)
+cmd = "C:\\Utils\\neural-network.exe --action MetricTrain --olap-db NN_TS_WithMetrics --model-name %s --data-source \"%s\" --sql-table-name \"%s\" --query-data %s --predictions %d" % (model_name, data_source, training_tablename, validation_historical, args.predictions)
 print ("creating and training mining model")
 logging.info(cmd)
 os.system(cmd)
 
 # Step 7. Validate the trained model against the validation set
 predicted_values = "%s\\PredictedData.txt" % output_dir
-cmd = "C:\\Utils\\neural-network.exe --action MetricQuery --model-name %s --query-data %s --predictions %d --output-file %s" % (model_name, validation_historical, args.predictions, predicted_values)
+cmd = "C:\\Utils\\neural-network.exe --action MetricQuery --olap-db NN_TS_WithMetrics --model-name %s --query-data %s --predictions %d --output-file %s" % (model_name, validation_historical, args.predictions, predicted_values)
 print ("predicting values using validation set %s" % validation_historical)
 logging.info(cmd)
 os.system(cmd)
 
 # Step 8. Compute statistics on the predictions vs. actual values
-summary_file = "%s\\Summary.txt" % output_dir
+summary_file = "%s\\Summary-2.txt" % output_dir
 print ("computing accuracy statistics using predicted values %s" % predicted_values)
-cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions.py --input %s --summary-file %s --pred-step all" % (predicted_values, summary_file)
+cmd = "python C:\\TimeSeriesWithMetrics\\analyze-predictions-2.py --input %s --summary-file %s --metrics all" % (predicted_values, summary_file)
 logging.info(cmd)
 os.system(cmd)
