@@ -7,13 +7,13 @@ if "C:\\Scripts" not in sys.path:
     sys.path.append("C:\\scripts")
 import tablegenerator
 # globals
-dbname = "WithMetrics"
 # command-line args
-parser = argparse.ArgumentParser("Insert time series vectors into a SQL table in the %s DB" % dbname)
+parser = argparse.ArgumentParser("Insert time series vectors into a SQL table in the specified DB")
 parser.add_argument("--input", required=True, help="input file")
 parser.add_argument("-t", "--tablename", required=True)
 parser.add_argument("-v", "--verbose", action="store_true")
 parser.add_argument("-d", "--dryrun", action="store_true")
+parser.add_argument("--dbname", required=True)
 args = parser.parse_args()
 # read headers
 with open(args.input, "r") as inputfile:
@@ -31,9 +31,9 @@ tg = tablegenerator.TableGenerator()
 tg.verbose = args.verbose
 tg.dryrun = args.dryrun
 try:
-    tg.connect(dbname)
+    tg.connect(args.dbname)
 except pypyodbc.DatabaseError:
-    print ("Could not connect to db [%s]" % dbname)
+    print ("Could not connect to db [%s]" % args.dbname)
     sys.exit(1)
 column_spec = []
 for i in range(0, history):
